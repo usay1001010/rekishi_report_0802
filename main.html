@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インタラクティブ・レポート：近代市民家族の誕生</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: レポートの4つの主要な変化（配偶者の選択、婚姻観、性別役割、子ども観）を4つの独立したセクションとして構成する、テーマ別のシングルページアプリケーションを設計。各セクション内で、利用者はボタン操作によって「前近代」と「近代」の概念を切り替え、テキストと視覚的要素の変化をインタラクティブに体験できる。この構造は、複雑な歴史的変遷を単純な対比で示すことで、利用者の直感的な理解を促進することを目的としている。直線的なスクロールとナビゲーションによるジャンプの両方を可能にし、自由な探索を支援する。 -->
+    <!-- Visualization & Content Choices: 
+        1. 配偶者の選択: Goal: 価値観の変化を比較。Method: HTML/CSSによる比較カード。Interaction: ボタンで表示切替。Justification: 2つの時代の基準を並べて示すことで、変化が最も明確に伝わる。
+        2. 婚姻観: Goal: 概念の変遷を時系列で示す。Method: HTML/CSSによるシンプルなタイムライン図。Interaction: ボタンで各時代の説明をハイライト。Justification: 啓蒙主義からロマン主義への流れを視覚的に表現。
+        3. 性別役割分担: Goal: 公的/私的領域の分離を説明。Method: HTML/CSSによる概念図。Interaction: なし。静的な図で概念を固定的に提示。Justification: 確立されたイデオロギーを象徴的に示すため。
+        4. 子ども観: Goal: 子どもへの関心の高まりを示す。Method: Chart.jsによる棒グラフ。Interaction: ボタンでグラフデータを更新。Justification: 抽象的な「愛情の量」をグラフ化することで、変化の度合いを感覚的に理解させる。
+        Library: Chart.jsを使用。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FDFBF7;
+            color: #4A4A4A;
+        }
+        .active-btn {
+            background-color: #D97706; /* Amber 600 */
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+        .inactive-btn {
+            background-color: #E5E7EB; /* Gray 200 */
+            color: #374151; /* Gray 700 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .content-card {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .card-hidden {
+            opacity: 0;
+            transform: translateY(10px);
+            position: absolute;
+            pointer-events: none;
+        }
+        .card-visible {
+            opacity: 1;
+            transform: translateY(0);
+            position: static;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-amber-800 text-white p-6 shadow-md">
+        <div class="container mx-auto text-center">
+            <h1 class="text-3xl font-bold">インタラクティブ・レポート</h1>
+            <p class="text-xl mt-2">近代市民家族の誕生：その4つの大変化を探る</p>
+        </div>
+    </header>
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+        <div class="container mx-auto px-4">
+            <ul class="flex justify-center space-x-4 sm:space-x-8 py-3">
+                <li><a href="#section1" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">配偶者の選択</a></li>
+                <li><a href="#section2" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">婚姻の概念</a></li>
+                <li><a href="#section3" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">性別の役割</a></li>
+                <li><a href="#section4" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">子ども観</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="section1" class="py-12 md:py-16">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-amber-900">1. 配偶者の選択</h2>
+                <p class="mt-4 text-lg">結婚相手を選ぶ基準は、時代と共に劇的に変化しました。かつて家の存続や経済力が最優先された時代から、個人の「愛情」が最も重要な動機となる近代へ。下のボタンで、それぞれの時代の価値観を切り替えてみましょう。</p>
+                
+                <div class="my-8 flex justify-center space-x-4">
+                    <button id="btn-choice-1" class="px-6 py-2 rounded-full transition-colors duration-300 active-btn">愛情優位の時代</button>
+                    <button id="btn-choice-2" class="px-6 py-2 rounded-full transition-colors duration-300 inactive-btn">家産重視の時代</button>
+                </div>
+
+                <div class="relative">
+                    <div id="content-choice-1" class="content-card card-visible bg-amber-50 p-6 rounded-lg shadow">
+                        <h3 class="text-2xl font-bold text-amber-800">近代：「愛」こそが結婚の要</h3>
+                        <p class="mt-4 text-left">17世紀後半から、個人の感情が尊重され始めます。デフォーのような著述家は「相互の愛情は結婚生活の要」と説き、当事者間の愛が結婚の合法性を担保するという新しい価値観が生まれました。結婚は、家と家の契約から、個人と個人の精神的な結びつきへとその意味を変えたのです。</p>
+                        <div class="mt-6 text-left">
+                            <h4 class="font-bold">主な選択基準：</h4>
+                            <ul class="list-disc list-inside mt-2">
+                                <li>相手個人に対する愛情・関心</li>
+                                <li>精神的な充足と幸福</li>
+                                <li>個人の自由な意思決定</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div id="content-choice-2" class="content-card card-hidden bg-gray-100 p-6 rounded-lg shadow">
+                        <h3 class="text-2xl font-bold text-gray-800">前近代：家の存続と経済力</h3>
+                        <p class="mt-4 text-left">かつてのドイツの伝統社会などでは、結婚は個人のものではなく「家」のものでした。結婚相手を選ぶ際には、資産、持参金、労働能力といった経済的・実用的な観点が最優先され、当事者間の愛情は二の次でした。親の決定に従うことが当然とされていたのです。</p>
+                        <div class="mt-6 text-left">
+                            <h4 class="font-bold">主な選択基準：</h4>
+                            <ul class="list-disc list-inside mt-2">
+                                <li>職業、資産、持参金の額</li>
+                                <li>家事や労働の能力</li>
+                                <li>親や共同体の承認</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-8 border-amber-200">
+
+        <section id="section2" class="py-12 md:py-16">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-amber-900">2. 婚姻の概念</h2>
+                <p class="mt-4 text-lg">「愛」が結婚の前提となると、その「愛」の理想像も時代によって変化しました。18世紀の啓蒙主義が求めた「理性的な愛」から、19世紀のロマン主義が称揚した「激情的な愛」へ。この変化は、法律や哲学にも大きな影響を与えました。</p>
+                
+                <div class="mt-8">
+                    <div class="flex justify-center items-center">
+                        <div class="text-center p-4">
+                            <h3 class="font-bold text-xl">18世紀</h3>
+                            <p class="text-sm">啓蒙主義</p>
+                        </div>
+                        <div class="flex-grow border-t-2 border-amber-400 border-dashed mx-4"></div>
+                        <div class="text-center p-4">
+                            <h3 class="font-bold text-xl">19世紀</h3>
+                            <p class="text-sm">ロマン主義</p>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8 mt-4">
+                        <div class="bg-amber-50 p-6 rounded-lg shadow">
+                            <h4 class="text-xl font-bold text-amber-800">理性的な愛</h4>
+                            <p class="mt-3">相手への尊敬や信頼に基づき、穏やかで理性的な関係性を理想としました。感情の爆発は未熟なものとされ、婚姻は社会の安定に寄与する契約と見なされました。</p>
+                        </div>
+                        <div class="bg-amber-50 p-6 rounded-lg shadow">
+                            <h4 class="text-xl font-bold text-amber-800">激情的な愛</h4>
+                            <p class="mt-3">個人の感情の満足を求める、情熱的な「恋」が称揚されました。婚姻は、プロイセン一般国法典の改定にも見られるように、「愛情にもとづく倫理的結合」と定義されるようになります。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-8 border-amber-200">
+
+        <section id="section3" class="py-12 md:py-16">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-amber-900">3. 性別の役割</h2>
+                <p class="mt-4 text-lg">近代市民家族の成立は、「自然の性差論」に基づき、男女の役割を明確に分離させました。男性は家庭の外の「公的領域」で働き、女性は家庭という「私的領域」を守る。この構造は、現代に至るまで大きな影響を残しています。</p>
+                
+                <div class="mt-10 bg-amber-50 p-8 rounded-lg shadow-lg flex flex-col md:flex-row items-center gap-8">
+                    <div class="flex-1 text-center border-b-2 md:border-b-0 md:border-r-2 border-amber-200 pb-6 md:pb-0 md:pr-8">
+                        <span class="text-5xl">🏢</span>
+                        <h3 class="text-2xl font-bold mt-2 text-amber-800">公的領域 (男性)</h3>
+                        <p class="mt-2">国家、経済、社会といった家庭の外の世界。競争と理性が支配する領域とされ、男性が担うべき場所と定義されました。</p>
+                    </div>
+                    <div class="flex-1 text-center">
+                        <span class="text-5xl">🏡</span>
+                        <h3 class="text-2xl font-bold mt-2 text-amber-800">私的領域 (女性)</h3>
+                        <p class="mt-2">家庭という、愛情と安らぎの空間。女性の「天職」とされ、家事労働は経済活動ではなく「愛の行為」と見なされました。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-8 border-amber-200">
+
+        <section id="section4" class="py-12 md:py-16">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-amber-900">4. 子ども観の変化</h2>
+                <p class="mt-4 text-lg">近代以前、子どもは「小さな大人」と見なされ、労働力の一部でした。しかし近代になると、「子ども期」という概念が発見され、愛情を注ぎ、保護し、教育すべき存在へと、その見方は180度変わります。</p>
+                
+                <div class="my-8 flex justify-center space-x-4">
+                    <button id="btn-child-1" class="px-6 py-2 rounded-full transition-colors duration-300 active-btn">近代の子ども観</button>
+                    <button id="btn-child-2" class="px-6 py-2 rounded-full transition-colors duration-300 inactive-btn">前近代の子ども観</button>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="childChart"></canvas>
+                </div>
+                <div id="child-text" class="mt-6 text-lg bg-amber-50 p-6 rounded-lg shadow">
+                    <p>ルソーは旧来の身体を束縛する育児法を批判し、子どもへの愛情や親の道徳的責任感を説きました。子どもは家族の中心となり、特に母親が育児と教育の主要な担い手となっていきます。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-amber-800 text-white mt-16 py-6">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Interactive Historical Report. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentData = {
+                choice: {
+                    '1': {
+                        title: '近代：「愛」こそが結婚の要',
+                        text: '17世紀後半から、個人の感情が尊重され始めます。デフォーのような著述家は「相互の愛情は結婚生活の要」と説き、当事者間の愛が結婚の合法性を担保するという新しい価値観が生まれました。結婚は、家と家の契約から、個人と個人の精神的な結びつきへとその意味を変えたのです。',
+                        criteria: ['相手個人に対する愛情・関心', '精神的な充足と幸福', '個人の自由な意思決定']
+                    },
+                    '2': {
+                        title: '前近代：家の存続と経済力',
+                        text: 'かつてのドイツの伝統社会などでは、結婚は個人のものではなく「家」のものでした。結婚相手を選ぶ際には、資産、持参金、労働能力といった経済的・実用的な観点が最優先され、当事者間の愛情は二の次でした。親の決定に従うことが当然とされていたのです。',
+                        criteria: ['職業、資産、持参金の額', '家事や労働の能力', '親や共同体の承認']
+                    }
+                },
+                child: {
+                    '1': {
+                        label: '近代の子ども観',
+                        data: [85, 90],
+                        text: 'ルソーは旧来の身体を束縛する育児法を批判し、子どもへの愛情や親の道徳的責任感を説きました。子どもは家族の中心となり、特に母親が育児と教育の主要な担い手となっていきます。'
+                    },
+                    '2': {
+                        label: '前近代の子ども観',
+                        data: [20, 15],
+                        text: '乳幼児死亡率が非常に高かった時代、子どもは「小さな大人」と見なされ、7歳頃になると労働力として扱われました。親子の情緒的な結びつきは比較的希薄だったと考えられています。'
+                    }
+                }
+            };
+
+            const btnChoice1 = document.getElementById('btn-choice-1');
+            const btnChoice2 = document.getElementById('btn-choice-2');
+            const contentChoice1 = document.getElementById('content-choice-1');
+            const contentChoice2 = document.getElementById('content-choice-2');
+
+            function toggleChoice(activeBtn, inactiveBtn, activeContent, inactiveContent) {
+                activeBtn.classList.replace('inactive-btn', 'active-btn');
+                inactiveBtn.classList.replace('active-btn', 'inactive-btn');
+                
+                activeContent.classList.replace('card-hidden', 'card-visible');
+                inactiveContent.classList.replace('card-visible', 'card-hidden');
+            }
+
+            btnChoice1.addEventListener('click', () => toggleChoice(btnChoice1, btnChoice2, contentChoice1, contentChoice2));
+            btnChoice2.addEventListener('click', () => toggleChoice(btnChoice2, btnChoice1, contentChoice2, contentChoice1));
+
+            const ctx = document.getElementById('childChart').getContext('2d');
+            const childChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['親からの愛情', '教育への関心'],
+                    datasets: [{
+                        label: '概念的な関心度',
+                        data: contentData.child['1'].data,
+                        backgroundColor: [
+                            'rgba(217, 119, 6, 0.6)',
+                            'rgba(180, 83, 9, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(217, 119, 6, 1)',
+                            'rgba(180, 83, 9, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const btnChild1 = document.getElementById('btn-child-1');
+            const btnChild2 = document.getElementById('btn-child-2');
+            const childText = document.getElementById('child-text');
+
+            function updateChildSection(activeId) {
+                const data = contentData.child[activeId];
+                childChart.data.datasets[0].data = data.data;
+                childChart.update();
+                childText.querySelector('p').textContent = data.text;
+
+                if (activeId === '1') {
+                    btnChild1.classList.replace('inactive-btn', 'active-btn');
+                    btnChild2.classList.replace('active-btn', 'inactive-btn');
+                } else {
+                    btnChild2.classList.replace('inactive-btn', 'active-btn');
+                    btnChild1.classList.replace('active-btn', 'inactive-btn');
+                }
+            }
+
+            btnChild1.addEventListener('click', () => updateChildSection('1'));
+            btnChild2.addEventListener('click', () => updateChildSection('2'));
+        });
+    </script>
+</body>
+</html>
