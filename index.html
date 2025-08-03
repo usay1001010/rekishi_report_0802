@@ -3,325 +3,647 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>インタラクティブ・レポート：近代市民家族の誕生</title>
+    <title>知能情報工学 インタラクティブ学習ガイド</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutrals -->
-    <!-- Application Structure Plan: レポートの4つの主要な変化（配偶者の選択、婚姻観、性別役割、子ども観）を4つの独立したセクションとして構成する、テーマ別のシングルページアプリケーションを設計。各セクション内で、利用者はボタン操作によって「前近代」と「近代」の概念を切り替え、テキストと視覚的要素の変化をインタラクティブに体験できる。この構造は、複雑な歴史的変遷を単純な対比で示すことで、利用者の直感的な理解を促進することを目的としている。直線的なスクロールとナビゲーションによるジャンプの両方を可能にし、自由な探索を支援する。 -->
-    <!-- Visualization & Content Choices: 
-        1. 配偶者の選択: Goal: 価値観の変化を比較。Method: HTML/CSSによる比較カード。Interaction: ボタンで表示切替。Justification: 2つの時代の基準を並べて示すことで、変化が最も明確に伝わる。
-        2. 婚姻観: Goal: 概念の変遷を時系列で示す。Method: HTML/CSSによるシンプルなタイムライン図。Interaction: ボタンで各時代の説明をハイライト。Justification: 啓蒙主義からロマン主義への流れを視覚的に表現。
-        3. 性別役割分担: Goal: 公的/私的領域の分離を説明。Method: HTML/CSSによる概念図。Interaction: なし。静的な図で概念を固定的に提示。Justification: 確立されたイデオロギーを象徴的に示すため。
-        4. 子ども観: Goal: 子どもへの関心の高まりを示す。Method: Chart.jsによる棒グラフ。Interaction: ボタンでグラフデータを更新。Justification: 抽象的な「愛情の量」をグラフ化することで、変化の度合いを感覚的に理解させる。
-        Library: Chart.jsを使用。 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Teal) -->
+    <!-- Application Structure Plan: A tab-based SPA with four main interactive views: 1) A clickable conceptual map for exploration. 2) A side-by-side method comparison tool. 3) Keyword flashcards for review. 4) A model selection simulator for practical understanding. This structure transforms a linear document into a multi-faceted study tool, catering to different learning styles (visual, comparative, active recall) and improving usability over a simple text page. -->
+    <!-- Visualization & Content Choices: Major concepts are presented on a clickable HTML/CSS map (Goal: Organize). Details appear in modals, sometimes with illustrative Chart.js canvases (e.g., scatter plot for Regression, Goal: Inform). A dynamic HTML table is used for comparisons (Goal: Compare). HTML/CSS cards are used for keywords (Goal: Inform). An interactive quiz uses HTML forms (Goal: Engage). This approach avoids static text walls and promotes interaction. CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            background-color: #FDFBF7;
-            color: #4A4A4A;
         }
-        .active-btn {
-            background-color: #D97706; /* Amber 600 */
-            color: #FFFFFF;
-            font-weight: 700;
+        .tab-active {
+            border-color: #0d9488; /* teal-600 */
+            color: #0d9488;
+            background-color: #f0fdfa; /* teal-50 */
         }
-        .inactive-btn {
-            background-color: #E5E7EB; /* Gray 200 */
-            color: #374151; /* Gray 700 */
+        .concept-node {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .concept-node:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .flashcard-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
         }
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             margin-left: auto;
             margin-right: auto;
-            height: 300px;
-            max-height: 400px;
+            height: 250px;
+            max-height: 300px;
         }
-        @media (min-width: 768px) {
+        @media (min-width: 640px) {
             .chart-container {
-                height: 350px;
+                height: 300px;
+                max-height: 350px;
             }
-        }
-        .content-card {
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        }
-        .card-hidden {
-            opacity: 0;
-            transform: translateY(10px);
-            position: absolute;
-            pointer-events: none;
-        }
-        .card-visible {
-            opacity: 1;
-            transform: translateY(0);
-            position: static;
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="bg-stone-50 text-stone-800">
 
-    <header class="bg-amber-800 text-white p-6 shadow-md">
-        <div class="container mx-auto text-center">
-            <h1 class="text-3xl font-bold">インタラクティブ・レポート</h1>
-            <p class="text-xl mt-2">近代市民家族の誕生：その4つの大変化を探る</p>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-teal-800">知能情報工学 インタラクティブ学習ガイド</h1>
+            <p class="text-stone-600 mt-2">主要な概念を対話的に学び、テストに備えましょう。</p>
+        </header>
+
+        <div class="mb-8 border-b border-stone-300">
+            <nav class="flex flex-wrap -mb-px justify-center" id="tabs">
+                <button data-tab="map" class="tab-btn text-lg py-3 px-5 border-b-4 font-medium tab-active">学習マップ</button>
+                <button data-tab="comparison" class="tab-btn text-lg py-3 px-5 border-b-4 font-medium border-transparent hover:border-stone-400">手法比較</button>
+                <button data-tab="flashcards" class="tab-btn text-lg py-3 px-5 border-b-4 font-medium border-transparent hover:border-stone-400">キーワード</button>
+                <button data-tab="simulator" class="tab-btn text-lg py-3 px-5 border-b-4 font-medium border-transparent hover:border-stone-400">モデル選択</button>
+            </nav>
         </div>
-    </header>
 
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
-        <div class="container mx-auto px-4">
-            <ul class="flex justify-center space-x-4 sm:space-x-8 py-3">
-                <li><a href="#section1" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">配偶者の選択</a></li>
-                <li><a href="#section2" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">婚姻の概念</a></li>
-                <li><a href="#section3" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">性別の役割</a></li>
-                <li><a href="#section4" class="text-amber-700 hover:text-amber-900 font-semibold text-sm sm:text-base">子ども観</a></li>
-            </ul>
+        <main id="tab-content">
+            <!-- 学習マップ -->
+            <div id="map" class="tab-pane">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-stone-700">概念のつながり</h2>
+                    <p class="text-stone-500 mt-1">知りたい項目をクリックして詳細を確認しましょう。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                    <!-- 教師あり学習 -->
+                    <div class="space-y-4 p-4 bg-white rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-center text-teal-700 bg-teal-50 py-2 rounded-lg">教師あり学習</h3>
+                        <div class="space-y-3">
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('regression')">回帰モデル</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('svm')">サポートベクターマシン</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('tree')">決定木 / ランダムフォレスト</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('nn')">ニューラルネットワーク</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('deep')">深層学習</div>
+                        </div>
+                    </div>
+                    <!-- 教師なし学習 -->
+                    <div class="space-y-4 p-4 bg-white rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-center text-teal-700 bg-teal-50 py-2 rounded-lg">教師なし学習</h3>
+                        <div class="space-y-3">
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('pca')">主成分分析</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('clustering')">クラスタリング</div>
+                        </div>
+                    </div>
+                    <!-- その他 -->
+                    <div class="space-y-4 p-4 bg-white rounded-xl shadow-md">
+                        <h3 class="text-xl font-bold text-center text-teal-700 bg-teal-50 py-2 rounded-lg">重要キーワード</h3>
+                        <div class="space-y-3">
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('preprocessing')">データ前処理</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('validation')">学習/検証データ</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('optimization')">最適化手法</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('evaluation')">評価指標</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('regularization')">過学習と正則化</div>
+                            <div class="concept-node bg-stone-100 p-3 rounded-lg text-center" onclick="showModal('ensemble')">アンサンブル学習</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 手法比較 -->
+            <div id="comparison" class="tab-pane hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-stone-700">手法比較ツール</h2>
+                    <p class="text-stone-500 mt-1">比較したい手法を2つ選択してください。</p>
+                </div>
+                <div class="flex justify-center gap-4 mb-6">
+                    <select id="compare1" class="p-2 border rounded-lg bg-white shadow-sm">
+                        <option value="regression">回帰モデル</option>
+                        <option value="svm">SVM</option>
+                        <option value="tree">決定木/ランダムフォレスト</option>
+                        <option value="nn">ニューラルネットワーク</option>
+                        <option value="pca">主成分分析</option>
+                        <option value="clustering">クラスタリング</option>
+                    </select>
+                    <select id="compare2" class="p-2 border rounded-lg bg-white shadow-sm">
+                        <option value="regression">回帰モデル</option>
+                        <option value="svm" selected>SVM</option>
+                        <option value="tree">決定木/ランダムフォレスト</option>
+                        <option value="nn">ニューラルネットワーク</option>
+                        <option value="pca">主成分分析</option>
+                        <option value="clustering">クラスタリング</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-max bg-white rounded-xl shadow-md overflow-hidden">
+                        <thead class="bg-teal-600 text-white">
+                            <tr>
+                                <th class="p-3 text-left">項目</th>
+                                <th id="header1" class="p-3 text-left"></th>
+                                <th id="header2" class="p-3 text-left"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-table-body" class="divide-y divide-stone-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- キーワード -->
+            <div id="flashcards" class="tab-pane hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-stone-700">キーワードフラッシュカード</h2>
+                    <p class="text-stone-500 mt-1">カードをクリックして定義を確認し、左右のボタンで移動します。</p>
+                </div>
+                <div class="max-w-2xl mx-auto">
+                    <div id="flashcard-container" class="flashcard-container h-64 sm:h-72">
+                        <div id="flashcard" class="flashcard relative w-full h-full">
+                            <div id="flashcard-front" class="flashcard-face absolute w-full h-full bg-white rounded-xl shadow-lg flex items-center justify-center p-6">
+                                <h3 class="text-3xl font-bold text-teal-700 text-center"></h3>
+                            </div>
+                            <div id="flashcard-back" class="flashcard-face flashcard-back absolute w-full h-full bg-teal-50 rounded-xl shadow-lg flex items-center justify-center p-6">
+                                <p class="text-stone-700 text-center"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4">
+                        <button id="prev-card" class="py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">← 前へ</button>
+                        <span id="card-counter" class="text-stone-600 font-medium"></span>
+                        <button id="next-card" class="py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">次へ →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- モデル選択 -->
+            <div id="simulator" class="tab-pane hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-stone-700">モデル選択シミュレーター</h2>
+                    <p class="text-stone-500 mt-1">課題に最も適した手法を選択してください。</p>
+                </div>
+                <div id="simulator-container" class="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md">
+                    <div id="question-container">
+                        <p class="text-lg font-medium text-stone-800 mb-4" id="scenario-question"></p>
+                        <div id="answer-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    </div>
+                    <div id="feedback-container" class="mt-4 p-4 rounded-lg hidden">
+                        <h4 id="feedback-title" class="font-bold text-lg"></h4>
+                        <p id="feedback-text" class="mt-1"></p>
+                        <button id="next-question" class="mt-4 py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">次の問題へ</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- モーダル -->
+    <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 sm:p-8">
+                <div class="flex justify-between items-start">
+                    <h3 id="modal-title" class="text-2xl sm:text-3xl font-bold text-teal-800 mb-4"></h3>
+                    <button onclick="closeModal()" class="text-3xl text-stone-500 hover:text-stone-800">&times;</button>
+                </div>
+                <div id="modal-content" class="prose max-w-none text-stone-700"></div>
+                <div id="modal-chart" class="mt-6">
+                    <div class="chart-container">
+                        <canvas id="concept-chart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
+    </div>
 
-    <main class="container mx-auto p-4 md:p-8">
+<script>
+    const data = {
+        regression: {
+            title: '回帰モデル (線形・非線形)',
+            type: '教師あり',
+            summary: '説明変数（入力）を用いて連続値の目的変数（出力）を予測する手法。',
+            content: `
+                <p><strong>考え方:</strong> データに最もフィットする数式モデル y=f(x) を見つけることが目的です。</p>
+                <p><strong>線形回帰:</strong> 目的変数を説明変数の一次式で表現するモデル。パラメータは最小二乗法で決定されます。関係性が単純で解釈しやすいため、初期分析に適しています。</p>
+                <p><strong>非線形回帰:</strong> 多項式回帰やロジスティック回帰など、変数間の関係が曲線的な（非線形な）場合に使用するモデルの総称。より複雑な関係性を捉えられます。</p>
+            `,
+            use_case: '株価予測、不動産価格の予測、売上予測など、数値を予測するタスク。'
+        },
+        svm: {
+            title: 'サポートベクターマシン (SVM)',
+            type: '教師あり',
+            summary: 'マージン最大化により高い汎化性能を目指す、主に分類で用いられる強力な手法。',
+            content: `
+                <p><strong>考え方:</strong> 異なるクラスを分離する決定境界（超平面）を、境界と最も近いデータ（サポートベクター）との距離（マージン）が最大になるように学習します。</p>
+                <p><strong>カーネルトリック:</strong> カーネル関数を用いて、元次元で線形分離できないデータを高次元空間に仮想的に写像し、分離を可能にする技術。計算コストを抑えつつ複雑な分類ができます。</p>
+            `,
+            use_case: '画像認識、テキスト分類、医療診断など、高次元で複雑なデータの分類。'
+        },
+        tree: {
+            title: '決定木 / ランダムフォレスト',
+            type: '教師あり',
+            summary: '決定木は解釈しやすいが過学習しやすく、ランダムフォレストはその欠点を克服したアンサンブル手法。',
+            content: `
+                <p><strong>決定木:</strong> 「IF-THEN」ルールでデータを木構造に分割していくモデル。分割基準にはジニ係数などが用いられます。解釈しやすいが、過学習しやすい欠点があります。</p>
+                <p><strong>ランダムフォレスト:</strong> 決定木の過学習を抑制するアンサンブル学習手法。ブートストラップで作成した複数のデータセットと、ランダムに選択した説明変数で多数の決定木を構築し、結果を多数決や平均で統合します。単体より高精度で安定的です。</p>
+            `,
+            use_case: '決定木: 顧客の離反要因分析、医療診断のルール抽出など、判断プロセスの解釈が必要な場合。ランダムフォレスト: 金融の不正検知、製品の需要予測など、高い予測精度が求められる場合。'
+        },
+        nn: {
+            title: 'ニューラルネットワーク (多層パーセプトロン)',
+            type: '教師あり',
+            summary: '脳の神経細胞を模倣したモデル。多層化と誤差逆伝搬法により非線形問題を解決。',
+            content: `
+                <p><strong>考え方:</strong> 脳の神経細胞（ニューロン）を模倣したモデル。入力層、隠れ層、出力層からなり、ユニット間の重みを学習します。</p>
+                <p><strong>多層パーセプトロン (MLP):</strong> 隠れ層を複数持つことで、単層のパーセプトロンでは解けなかった非線形問題を解決。学習は、出力と正解の誤差を逆方向に伝播させ重みを更新する誤差逆伝搬法で行います。</p>
+            `,
+            use_case: '画像・音声認識、自然言語処理など、様々なパターン認識タスクの基礎。'
+        },
+        deep: {
+            title: '深層学習 (CNN、生成モデル)',
+            type: '教師あり/なし',
+            summary: 'ニューラルネットワークの隠れ層をさらに多層にした技術の総称。より複雑な特徴を学習可能。',
+            content: `
+                <p><strong>畳み込みニューラルネットワーク (CNN):</strong> 主に画像認識用。畳み込み層で局所的特徴を、プーリング層で位置ずれに強い特徴を抽出し、階層的に学習します。</p>
+                <p><strong>生成モデル:</strong> データの分布を学習し、新しいデータを生成するモデル。</p>
+                <ul>
+                    <li><strong>オートエンコーダ:</strong> 入力データをエンコーダで圧縮し、デコーダで復元する。</li>
+                    <li><strong>敵対的生成ネットワーク (GAN):</strong> 偽データを生成する生成器と、それを見破る識別器が競い合い、精巧なデータを生成する。</li>
+                </ul>
+            `,
+            use_case: 'CNN: 画像分類、物体検出。オートエンコーダ: 次元削減、異常検知、ノイズ除去。GAN: 画像生成、データ拡張。'
+        },
+        pca: {
+            title: '主成分分析 (PCA)',
+            type: '教師なし',
+            summary: '多次元データを、情報を極力維持しつつ低次元に要約する（次元削減）手法。',
+            content: `
+                <p><strong>考え方:</strong> データの分散が最大になる方向を第1主成分、次に大きい方向を第2主成分…として新しい軸を求めます。これにより、元の変数の相関関係を考慮しつつ、より少ない合成変数でデータの特徴を表現できます。数学的にはデータの分散共分散行列の固有ベクトルを求めることに相当します。</p>
+            `,
+            use_case: '多すぎる変数の削減によるモデルの単純化・高速化、データの可視化。'
+        },
+        clustering: {
+            title: 'クラスタリング',
+            type: '教師なし',
+            summary: '正解ラベルなしに、似たデータをグループ分けする手法。',
+            content: `
+                <p><strong>手法:</strong></p>
+                <ul>
+                    <li><strong>階層的:</strong> 最も似たデータから順にまとめ、過程をデンドログラム（樹形図）で示す。</li>
+                    <li><strong>非階層的 (K-means):</strong> クラスタ数kを決め、各データが最も近いクラスタ中心に所属するように分割を繰り返す。</li>
+                </ul>
+            `,
+            use_case: '顧客セグメンテーション（購買行動が似た顧客グループの発見）、異常検知（どのグループにも属さないデータを見つける）、画像領域分割。'
+        },
+        preprocessing: {
+            title: 'データ前処理',
+            content: `モデル性能を左右する重要プロセス。アノテーション（タグ付け）、スケーリング（尺度統一）、データクレンジング（欠損値・外れ値等の修正）を含む。`
+        },
+        validation: {
+            title: '学習用/検証用データ',
+            content: `過学習を防ぐため、データをモデル構築用の学習用と性能評価用の検証用に分割する。ホールドアウト法や交差検証法がある。`
+        },
+        optimization: {
+            title: '最適化手法',
+            content: `<strong>最小二乗法:</strong> 予測と実測値の誤差（残差）の二乗和が最小になるようパラメータを決める手法。<br><strong>勾配降下法:</strong> 誤差関数の勾配を頼りにパラメータを反復更新し、最小値を探す最適化手法。`
+        },
+        evaluation: {
+            title: '評価指標（分類）',
+            content: `<strong>混同行列:</strong> 分類モデルの性能評価指標。正解率（全体の正解割合）、適合率（Positive予測の正解割合）、再現率（実際のPositiveをどれだけ検出できたかの割合）、両者のバランスを取ったF1-Scoreがある。`
+        },
+        regularization: {
+            title: '過学習と正則化',
+            content: `<strong>過学習 (Over-Fitting):</strong> モデルが学習データを過剰に学習しすぎてしまい、未知の新しいデータに対しては精度が低くなってしまう現象。<br><strong>正則化 (Regularization):</strong> この過学習を防ぐため、評価関数にパラメータの大きさを抑えるペナルティ項を加える手法。モデルが複雑になりすぎるのを防ぐ。L1正則化（Lasso）とL2正則化（Ridge）がある。`
+        },
+        ensemble: {
+            title: 'アンサンブル学習',
+            content: `<strong>バギング:</strong> 独立した学習器を並列に作り結果を統合する（例：ランダムフォレスト）。<br><strong>ブースティング:</strong> 学習器を直列に作り、前の間違いを次に活かして精度を高める。`
+        }
+    };
+
+    const flashcardData = [
+        { term: 'AI・機械学習・データサイエンス', definition: 'AI（人間の知的活動の実現）という大きな枠組みの中に、データからパターンを学ぶ機械学習があり、それらの技術を用いてデータから価値を引き出すのがデータサイエンス。' },
+        { term: '教師あり/なし学習', definition: '教師ありは正解ラベル付きデータ（説明変数と目的変数）で学習し予測する。教師なしはラベルなしデータから構造やパターンを発見する。' },
+        { term: 'データ前処理', definition: 'モデル性能を左右する重要プロセス。アノテーション（タグ付け）、スケーリング（尺度統一）、データクレンジング（欠損値・外れ値等の修正）を含む。' },
+        { term: '学習用/検証用データ', definition: '過学習を防ぐため、データをモデル構築用の学習用と性能評価用の検証用に分割する。ホールドアウト法や交差検証法がある。' },
+        { term: '最小二乗法/勾配降下法', definition: '最小二乗法は予測と実測値の誤差（残差）の二乗和が最小になるようパラメータを決める手法。勾配降下法は、誤差関数の勾配を頼りにパラメータを反復更新し、最小値を探す最適化手法。' },
+        { term: '混同行列', definition: '分類モデルの性能評価指標。正解率、適合率、再現率、両者のバランスを取ったF1-Scoreがある。' },
+        { term: '過学習と正則化', definition: '過学習は訓練データに適合しすぎ未知データに弱い状態。正則化は過学習を防ぐためモデルの複雑さにペナルティを課す手法。' },
+        { term: 'カーネル', definition: 'SVMで、低次元での計算のまま高次元空間での分離を可能にする関数（カーネルトリック）。多項式カーネルやガウスカーネルが代表的。' },
+        { term: 'バギング/ブースティング', definition: 'アンサンブル学習の手法。バギングは独立した学習器を並列に作り結果を統合する（例：ランダムフォレスト）。ブースティングは学習器を直列に作り、前の間違いを次に活かして精度を高める。' },
+        { term: '強化学習', definition: '「エージェント」が「環境」内で試行錯誤し、「報酬」を最大化するよう学習する枠組み。' },
+        { term: '次元の呪い', definition: '次元の増加に伴い、データが疎になりモデル性能が低下する問題。次元削減が有効。' },
+        { term: '誤差逆伝搬法', definition: 'ニューラルネットワークの学習アルゴリズム。出力層の誤差を逆方向に伝え、各層の重みを効率的に更新する。' }
+    ];
+    
+    const simulatorQuestions = [
+        {
+            question: 'あるECサイトの全顧客を、購買傾向が似ているいくつかのグループに分け、それぞれに合ったキャンペーンを企画したい。',
+            options: ['回帰モデル', 'クラスタリング', 'SVM'],
+            answer: 'クラスタリング',
+            feedback: '正解です。クラスタリングは、正解ラベルなしにデータを似たもの同士でグループ分けする教師なし学習手法であり、顧客セグメンテーションに最適です。'
+        },
+        {
+            question: '過去の気象データ（気温、湿度、風速など）から、明日の具体的な降水量を予測したい。',
+            options: ['回帰モデル', '主成分分析', '決定木'],
+            answer: '回帰モデル',
+            feedback: '正解です。降水量という連続的な数値を予測する問題なので、回帰モデルが適しています。'
+        },
+        {
+            question: '手書きの郵便番号の画像を読み取り、それが0から9のどの数字であるかを自動で判定したい。',
+            options: ['SVM', 'クラスタリング', '主成分分析'],
+            answer: 'SVM',
+            feedback: '正解です。SVMは画像認識のような高次元データの分類問題で高い性能を発揮します。（CNNも良い選択肢です）'
+        },
+        {
+            question: 'ある会社の株価に影響を与えそうな経済指標が100種類ある。これらをより少数の主要な指標にまとめて、市場の全体的な動向を把握したい。',
+            options: ['ランダムフォレスト', '主成分分析', 'GAN'],
+            answer: '主成分分析',
+            feedback: '正解です。主成分分析は、多数の変数を情報を極力維持しつつ少数の合成変数に要約する次元削減手法で、このような場合に適しています。'
+        }
+    ];
+
+    let currentChart = null;
+
+    function showModal(key) {
+        const item = data[key];
+        if (!item) return;
+
+        document.getElementById('modal-title').innerText = item.title || '';
+        document.getElementById('modal-content').innerHTML = item.content || '';
+        document.getElementById('modal').classList.remove('hidden');
         
-        <section id="section1" class="py-12 md:py-16">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold text-amber-900">1. 配偶者の選択</h2>
-                <p class="mt-4 text-lg">結婚相手を選ぶ基準は、時代と共に劇的に変化しました。かつて家の存続や経済力が最優先された時代から、個人の「愛情」が最も重要な動機となる近代へ。下のボタンで、それぞれの時代の価値観を切り替えてみましょう。</p>
-                
-                <div class="my-8 flex justify-center space-x-4">
-                    <button id="btn-choice-1" class="px-6 py-2 rounded-full transition-colors duration-300 active-btn">愛情優位の時代</button>
-                    <button id="btn-choice-2" class="px-6 py-2 rounded-full transition-colors duration-300 inactive-btn">家産重視の時代</button>
-                </div>
+        const chartContainer = document.getElementById('modal-chart');
+        const canvas = document.getElementById('concept-chart');
+        
+        if (currentChart) {
+            currentChart.destroy();
+        }
 
-                <div class="relative">
-                    <div id="content-choice-1" class="content-card card-visible bg-amber-50 p-6 rounded-lg shadow">
-                        <h3 class="text-2xl font-bold text-amber-800">近代：「愛」こそが結婚の要</h3>
-                        <p class="mt-4 text-left">17世紀後半から、個人の感情が尊重され始めます。デフォーのような著述家は「相互の愛情は結婚生活の要」と説き、当事者間の愛が結婚の合法性を担保するという新しい価値観が生まれました。結婚は、家と家の契約から、個人と個人の精神的な結びつきへとその意味を変えたのです。</p>
-                        <div class="mt-6 text-left">
-                            <h4 class="font-bold">主な選択基準：</h4>
-                            <ul class="list-disc list-inside mt-2">
-                                <li>相手個人に対する愛情・関心</li>
-                                <li>精神的な充足と幸福</li>
-                                <li>個人の自由な意思決定</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div id="content-choice-2" class="content-card card-hidden bg-gray-100 p-6 rounded-lg shadow">
-                        <h3 class="text-2xl font-bold text-gray-800">前近代：家の存続と経済力</h3>
-                        <p class="mt-4 text-left">かつてのドイツの伝統社会などでは、結婚は個人のものではなく「家」のものでした。結婚相手を選ぶ際には、資産、持参金、労働能力といった経済的・実用的な観点が最優先され、当事者間の愛情は二の次でした。親の決定に従うことが当然とされていたのです。</p>
-                        <div class="mt-6 text-left">
-                            <h4 class="font-bold">主な選択基準：</h4>
-                            <ul class="list-disc list-inside mt-2">
-                                <li>職業、資産、持参金の額</li>
-                                <li>家事や労働の能力</li>
-                                <li>親や共同体の承認</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+        let chartData;
+        switch(key) {
+            case 'regression':
+                chartData = getChartData.regression();
+                break;
+            case 'svm':
+                chartData = getChartData.svm();
+                break;
+            case 'tree':
+                chartData = getChartData.tree();
+                break;
+            case 'pca':
+                 chartData = getChartData.pca();
+                break;
+            case 'clustering':
+                 chartData = getChartData.clustering();
+                break;
+            default:
+                chartData = null;
+        }
 
-        <hr class="my-8 border-amber-200">
+        if (chartData) {
+            chartContainer.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            currentChart = new Chart(ctx, chartData);
+        } else {
+            chartContainer.style.display = 'none';
+        }
+    }
 
-        <section id="section2" class="py-12 md:py-16">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold text-amber-900">2. 婚姻の概念</h2>
-                <p class="mt-4 text-lg">「愛」が結婚の前提となると、その「愛」の理想像も時代によって変化しました。18世紀の啓蒙主義が求めた「理性的な愛」から、19世紀のロマン主義が称揚した「激情的な愛」へ。この変化は、法律や哲学にも大きな影響を与えました。</p>
-                
-                <div class="mt-8">
-                    <div class="flex justify-center items-center">
-                        <div class="text-center p-4">
-                            <h3 class="font-bold text-xl">18世紀</h3>
-                            <p class="text-sm">啓蒙主義</p>
-                        </div>
-                        <div class="flex-grow border-t-2 border-amber-400 border-dashed mx-4"></div>
-                        <div class="text-center p-4">
-                            <h3 class="font-bold text-xl">19世紀</h3>
-                            <p class="text-sm">ロマン主義</p>
-                        </div>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-8 mt-4">
-                        <div class="bg-amber-50 p-6 rounded-lg shadow">
-                            <h4 class="text-xl font-bold text-amber-800">理性的な愛</h4>
-                            <p class="mt-3">相手への尊敬や信頼に基づき、穏やかで理性的な関係性を理想としました。感情の爆発は未熟なものとされ、婚姻は社会の安定に寄与する契約と見なされました。</p>
-                        </div>
-                        <div class="bg-amber-50 p-6 rounded-lg shadow">
-                            <h4 class="text-xl font-bold text-amber-800">激情的な愛</h4>
-                            <p class="mt-3">個人の感情の満足を求める、情熱的な「恋」が称揚されました。婚姻は、プロイセン一般国法典の改定にも見られるように、「愛情にもとづく倫理的結合」と定義されるようになります。</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    function closeModal() {
+        document.getElementById('modal').classList.add('hidden');
+        if (currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+    }
 
-        <hr class="my-8 border-amber-200">
-
-        <section id="section3" class="py-12 md:py-16">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold text-amber-900">3. 性別の役割</h2>
-                <p class="mt-4 text-lg">近代市民家族の成立は、「自然の性差論」に基づき、男女の役割を明確に分離させました。男性は家庭の外の「公的領域」で働き、女性は家庭という「私的領域」を守る。この構造は、現代に至るまで大きな影響を残しています。</p>
-                
-                <div class="mt-10 bg-amber-50 p-8 rounded-lg shadow-lg flex flex-col md:flex-row items-center gap-8">
-                    <div class="flex-1 text-center border-b-2 md:border-b-0 md:border-r-2 border-amber-200 pb-6 md:pb-0 md:pr-8">
-                        <span class="text-5xl">🏢</span>
-                        <h3 class="text-2xl font-bold mt-2 text-amber-800">公的領域 (男性)</h3>
-                        <p class="mt-2">国家、経済、社会といった家庭の外の世界。競争と理性が支配する領域とされ、男性が担うべき場所と定義されました。</p>
-                    </div>
-                    <div class="flex-1 text-center">
-                        <span class="text-5xl">🏡</span>
-                        <h3 class="text-2xl font-bold mt-2 text-amber-800">私的領域 (女性)</h3>
-                        <p class="mt-2">家庭という、愛情と安らぎの空間。女性の「天職」とされ、家事労働は経済活動ではなく「愛の行為」と見なされました。</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <hr class="my-8 border-amber-200">
-
-        <section id="section4" class="py-12 md:py-16">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-bold text-amber-900">4. 子ども観の変化</h2>
-                <p class="mt-4 text-lg">近代以前、子どもは「小さな大人」と見なされ、労働力の一部でした。しかし近代になると、「子ども期」という概念が発見され、愛情を注ぎ、保護し、教育すべき存在へと、その見方は180度変わります。</p>
-                
-                <div class="my-8 flex justify-center space-x-4">
-                    <button id="btn-child-1" class="px-6 py-2 rounded-full transition-colors duration-300 active-btn">近代の子ども観</button>
-                    <button id="btn-child-2" class="px-6 py-2 rounded-full transition-colors duration-300 inactive-btn">前近代の子ども観</button>
-                </div>
-
-                <div class="chart-container">
-                    <canvas id="childChart"></canvas>
-                </div>
-                <div id="child-text" class="mt-6 text-lg bg-amber-50 p-6 rounded-lg shadow">
-                    <p>ルソーは旧来の身体を束縛する育児法を批判し、子どもへの愛情や親の道徳的責任感を説きました。子どもは家族の中心となり、特に母親が育児と教育の主要な担い手となっていきます。</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="bg-amber-800 text-white mt-16 py-6">
-        <div class="container mx-auto text-center">
-            <p>&copy; 2025 Interactive Historical Report. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const contentData = {
-                choice: {
-                    '1': {
-                        title: '近代：「愛」こそが結婚の要',
-                        text: '17世紀後半から、個人の感情が尊重され始めます。デフォーのような著述家は「相互の愛情は結婚生活の要」と説き、当事者間の愛が結婚の合法性を担保するという新しい価値観が生まれました。結婚は、家と家の契約から、個人と個人の精神的な結びつきへとその意味を変えたのです。',
-                        criteria: ['相手個人に対する愛情・関心', '精神的な充足と幸福', '個人の自由な意思決定']
-                    },
-                    '2': {
-                        title: '前近代：家の存続と経済力',
-                        text: 'かつてのドイツの伝統社会などでは、結婚は個人のものではなく「家」のものでした。結婚相手を選ぶ際には、資産、持参金、労働能力といった経済的・実用的な観点が最優先され、当事者間の愛情は二の次でした。親の決定に従うことが当然とされていたのです。',
-                        criteria: ['職業、資産、持参金の額', '家事や労働の能力', '親や共同体の承認']
-                    }
-                },
-                child: {
-                    '1': {
-                        label: '近代の子ども観',
-                        data: [85, 90],
-                        text: 'ルソーは旧来の身体を束縛する育児法を批判し、子どもへの愛情や親の道徳的責任感を説きました。子どもは家族の中心となり、特に母親が育児と教育の主要な担い手となっていきます。'
-                    },
-                    '2': {
-                        label: '前近代の子ども観',
-                        data: [20, 15],
-                        text: '乳幼児死亡率が非常に高かった時代、子どもは「小さな大人」と見なされ、7歳頃になると労働力として扱われました。親子の情緒的な結びつきは比較的希薄だったと考えられています。'
-                    }
-                }
-            };
-
-            const btnChoice1 = document.getElementById('btn-choice-1');
-            const btnChoice2 = document.getElementById('btn-choice-2');
-            const contentChoice1 = document.getElementById('content-choice-1');
-            const contentChoice2 = document.getElementById('content-choice-2');
-
-            function toggleChoice(activeBtn, inactiveBtn, activeContent, inactiveContent) {
-                activeBtn.classList.replace('inactive-btn', 'active-btn');
-                inactiveBtn.classList.replace('active-btn', 'inactive-btn');
-                
-                activeContent.classList.replace('card-hidden', 'card-visible');
-                inactiveContent.classList.replace('card-visible', 'card-hidden');
-            }
-
-            btnChoice1.addEventListener('click', () => toggleChoice(btnChoice1, btnChoice2, contentChoice1, contentChoice2));
-            btnChoice2.addEventListener('click', () => toggleChoice(btnChoice2, btnChoice1, contentChoice2, contentChoice1));
-
-            const ctx = document.getElementById('childChart').getContext('2d');
-            const childChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['親からの愛情', '教育への関心'],
-                    datasets: [{
-                        label: '概念的な関心度',
-                        data: contentData.child['1'].data,
-                        backgroundColor: [
-                            'rgba(217, 119, 6, 0.6)',
-                            'rgba(180, 83, 9, 0.6)'
-                        ],
-                        borderColor: [
-                            'rgba(217, 119, 6, 1)',
-                            'rgba(180, 83, 9, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%'
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.raw + '%';
-                                }
-                            }
+    const getChartData = {
+        regression: () => ({
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'データ点',
+                    data: Array.from({length: 20}, () => ({x: Math.random() * 10, y: Math.random() * 8 + 0.5 * (Math.random() * 10)})),
+                    backgroundColor: 'rgba(13, 148, 136, 0.6)'
+                }, {
+                    label: '回帰直線',
+                    data: [{x: 0, y: 1}, {x: 10, y: 6}],
+                    type: 'line',
+                    borderColor: 'rgb(209, 38, 38)',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: '回帰分析のイメージ' }}}
+        }),
+        svm: () => ({
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'クラスA', data: Array.from({length: 15}, () => ({x: Math.random() * 4 + 1, y: Math.random() * 4 + 5})), backgroundColor: 'rgba(13, 148, 136, 0.6)' },
+                    { label: 'クラスB', data: Array.from({length: 15}, () => ({x: Math.random() * 4 + 5, y: Math.random() * 4 + 1})), backgroundColor: 'rgba(217, 119, 6, 0.6)' },
+                    { label: '決定境界', data: [{x: 0, y: 10}, {x: 10, y: 0}], type: 'line', borderColor: 'rgb(209, 38, 38)', fill: false, tension: 0.1, borderWidth: 2 },
+                    { label: 'マージン', data: [{x: 0, y: 11.5}, {x: 11.5, y: 0}], type: 'line', borderColor: 'rgb(209, 38, 38)', fill: false, tension: 0.1, borderDash: [5, 5], borderWidth: 1 },
+                    { label: 'マージン', data: [{x: 0, y: 8.5}, {x: 8.5, y: 0}], type: 'line', borderColor: 'rgb(209, 38, 38)', fill: false, tension: 0.1, borderDash: [5, 5], borderWidth: 1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'SVMのマージン最大化' }}}
+        }),
+        tree: () => ({
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'クラスA', data: Array.from({length: 15}, () => ({x: Math.random() * 4, y: Math.random() * 10})), backgroundColor: 'rgba(13, 148, 136, 0.6)' },
+                    { label: 'クラスB', data: Array.from({length: 15}, () => ({x: Math.random() * 6 + 4, y: Math.random() * 5})), backgroundColor: 'rgba(217, 119, 6, 0.6)' },
+                    { label: 'クラスC', data: Array.from({length: 15}, () => ({x: Math.random() * 6 + 4, y: Math.random() * 5 + 5})), backgroundColor: 'rgba(59, 130, 246, 0.6)' }
+                ]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { 
+                    title: { display: true, text: '決定木による領域分割' },
+                    annotation: {
+                        annotations: {
+                            line1: { type: 'line', xMin: 4, xMax: 4, borderColor: 'rgb(209, 38, 38)', borderWidth: 2 },
+                            line2: { type: 'line', yMin: 5, yMax: 5, xMin: 4, xMax: 10, borderColor: 'rgb(209, 38, 38)', borderWidth: 2 }
                         }
                     }
-                }
-            });
-
-            const btnChild1 = document.getElementById('btn-child-1');
-            const btnChild2 = document.getElementById('btn-child-2');
-            const childText = document.getElementById('child-text');
-
-            function updateChildSection(activeId) {
-                const data = contentData.child[activeId];
-                childChart.data.datasets[0].data = data.data;
-                childChart.update();
-                childText.querySelector('p').textContent = data.text;
-
-                if (activeId === '1') {
-                    btnChild1.classList.replace('inactive-btn', 'active-btn');
-                    btnChild2.classList.replace('active-btn', 'inactive-btn');
-                } else {
-                    btnChild2.classList.replace('inactive-btn', 'active-btn');
-                    btnChild1.classList.replace('active-btn', 'inactive-btn');
+                },
+                scales: { x: { min: 0, max: 10 }, y: { min: 0, max: 10 } }
+            }
+        }),
+        pca: () => ({
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'データ点',
+                    data: Array.from({length: 30}, () => { const a = Math.random() * 10; const b = a + (Math.random()-0.5)*2; return {x: a, y: b}; }),
+                    backgroundColor: 'rgba(13, 148, 136, 0.6)'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { title: { display: true, text: '主成分分析のイメージ' }},
+                scales: {
+                    x: { title: { display: true, text: '第1主成分 (分散が最大)' } },
+                    y: { title: { display: true, text: '第2主成分' } }
                 }
             }
+        }),
+        clustering: () => ({
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'クラスタ1', data: Array.from({length: 15}, () => ({x: Math.random() * 3 + 1, y: Math.random() * 3 + 1})), backgroundColor: 'rgba(13, 148, 136, 0.6)' },
+                    { label: 'クラスタ2', data: Array.from({length: 15}, () => ({x: Math.random() * 3 + 6, y: Math.random() * 3 + 2})), backgroundColor: 'rgba(217, 119, 6, 0.6)' },
+                    { label: 'クラスタ3', data: Array.from({length: 15}, () => ({x: Math.random() * 3 + 4, y: Math.random() * 3 + 7})), backgroundColor: 'rgba(59, 130, 246, 0.6)' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'クラスタリングのイメージ' }}}
+        })
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.getElementById('tabs');
+        const tabPanes = document.getElementById('tab-content').children;
 
-            btnChild1.addEventListener('click', () => updateChildSection('1'));
-            btnChild2.addEventListener('click', () => updateChildSection('2'));
+        tabs.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-btn')) {
+                const tabName = e.target.dataset.tab;
+
+                for (let btn of tabs.children) {
+                    btn.classList.remove('tab-active');
+                }
+                e.target.classList.add('tab-active');
+
+                for (let pane of tabPanes) {
+                    if (pane.id === tabName) {
+                        pane.classList.remove('hidden');
+                    } else {
+                        pane.classList.add('hidden');
+                    }
+                }
+            }
         });
-    </script>
+
+        const compare1 = document.getElementById('compare1');
+        const compare2 = document.getElementById('compare2');
+        
+        function updateComparison() {
+            const key1 = compare1.value;
+            const key2 = compare2.value;
+            const item1 = data[key1];
+            const item2 = data[key2];
+
+            document.getElementById('header1').innerText = item1.title;
+            document.getElementById('header2').innerText = item2.title;
+
+            const tableBody = document.getElementById('comparison-table-body');
+            tableBody.innerHTML = `
+                <tr class="hover:bg-stone-50">
+                    <td class="p-3 font-medium text-stone-600">概要</td>
+                    <td class="p-3">${item1.summary}</td>
+                    <td class="p-3">${item2.summary}</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                    <td class="p-3 font-medium text-stone-600">学習タイプ</td>
+                    <td class="p-3">${item1.type}</td>
+                    <td class="p-3">${item2.type}</td>
+                </tr>
+                <tr class="hover:bg-stone-50">
+                    <td class="p-3 font-medium text-stone-600">主な利用ケース</td>
+                    <td class="p-3">${item1.use_case}</td>
+                    <td class="p-3">${item2.use_case}</td>
+                </tr>
+            `;
+        }
+
+        compare1.addEventListener('change', updateComparison);
+        compare2.addEventListener('change', updateComparison);
+        updateComparison();
+
+        let currentCardIndex = 0;
+        const flashcard = document.getElementById('flashcard');
+        const frontText = document.querySelector('#flashcard-front h3');
+        const backText = document.querySelector('#flashcard-back p');
+        const cardCounter = document.getElementById('card-counter');
+
+        function updateFlashcard() {
+            flashcard.classList.remove('is-flipped');
+            setTimeout(() => {
+                const card = flashcardData[currentCardIndex];
+                frontText.innerText = card.term;
+                backText.innerText = card.definition;
+                cardCounter.innerText = `${currentCardIndex + 1} / ${flashcardData.length}`;
+            }, 150);
+        }
+
+        flashcard.addEventListener('click', () => flashcard.classList.toggle('is-flipped'));
+        document.getElementById('prev-card').addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex - 1 + flashcardData.length) % flashcardData.length;
+            updateFlashcard();
+        });
+        document.getElementById('next-card').addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex + 1) % flashcardData.length;
+            updateFlashcard();
+        });
+        updateFlashcard();
+
+        let currentQuestionIndex = 0;
+        const questionEl = document.getElementById('scenario-question');
+        const optionsEl = document.getElementById('answer-options');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+
+        function loadQuestion() {
+            feedbackContainer.classList.add('hidden');
+            const q = simulatorQuestions[currentQuestionIndex];
+            questionEl.innerText = q.question;
+            optionsEl.innerHTML = '';
+            q.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.className = 'w-full p-3 bg-stone-100 rounded-lg hover:bg-teal-100 transition text-left';
+                button.onclick = () => checkAnswer(option);
+                optionsEl.appendChild(button);
+            });
+        }
+        
+        function checkAnswer(selectedOption) {
+            const q = simulatorQuestions[currentQuestionIndex];
+            if (selectedOption === q.answer) {
+                feedbackTitle.innerText = '正解！';
+                feedbackTitle.className = 'font-bold text-lg text-teal-700';
+                feedbackContainer.className = 'mt-4 p-4 rounded-lg bg-teal-50';
+            } else {
+                feedbackTitle.innerText = '不正解';
+                feedbackTitle.className = 'font-bold text-lg text-red-700';
+                feedbackContainer.className = 'mt-4 p-4 rounded-lg bg-red-50';
+            }
+            feedbackText.innerText = q.feedback;
+            feedbackContainer.classList.remove('hidden');
+        }
+
+        document.getElementById('next-question').addEventListener('click', () => {
+            currentQuestionIndex = (currentQuestionIndex + 1) % simulatorQuestions.length;
+            loadQuestion();
+        });
+        
+        loadQuestion();
+    });
+</script>
 </body>
 </html>
